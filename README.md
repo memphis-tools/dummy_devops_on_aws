@@ -14,7 +14,7 @@
 
   We create an AWS EKS Kubernetes cluster using eksctl.
 
-  About Wazuh : it's just set for learning purposes and has nothing to deal with the project's main purposes.
+  About Wazuh : it's just set for learning purposes and has nothing to deal with the project's main purposes. Currently ansible roles are a mess, do not pay attention.
 
 # Architecture
 

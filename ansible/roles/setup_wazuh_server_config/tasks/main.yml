@@ -45,12 +45,13 @@
       group: root
       mode: 0750
 
-  #Configuring the Wazuh indexer connection
+  # Configuring the Wazuh indexer connection
   - name: Save the Wazuh indexer username into the Wazuh manager keystore using the wazuh-keystore tool
     ansible.builtin.shell:
       cmd: echo 'admin' | /var/ossec/bin/wazuh-keystore -f indexer -k username
 
-  #Configuring the Wazuh indexer connection
+  # Configuring the Wazuh indexer connection
+  # learning purposes, draft, we do not care about the dummy credentials
   - name: Save the Wazuh indexer password into the Wazuh manager keystore using the wazuh-keystore tool
     ansible.builtin.shell:
       cmd: echo 'Str?wberrypie94' | /var/ossec/bin/wazuh-keystore -f indexer -k password
@@ -94,41 +95,11 @@
       state: restarted
       enabled: yes
 
+  # learning purposes, draft, we do not care about the dummy credentials
   - name: Create index template manually
     ansible.builtin.shell:
       cmd: "curl -X PUT 'https://aws-dummy-ops-wazuh-indexer.lab:9200/_template/wazuh' \
         -H 'Content-Type: application/json' \
         -d@/etc/filebeat/wazuh-template.json \
         -u admin:Str?wberrypie94"
-
-
-#20/03/2026 ce bloc est déjà commenté/non utilisé (ne pas décommenter)
-# si step échoue, se baser sur:
-# curl -X PUT "https://aws-dummy-ops-wazuh-indexer.lab:9200/wazuh-alerts-000001/_settings" -H 'Content-Type: application/json' -d'
-# {
-#   "index": {
-#     "number_of_replicas": 0
-#   }
-# }' -u admin:Str?wberrypie94
-
-#20/03/2026 je commente. La tache passe en erreur "index [wazuh-alerts-4.x-2025.10.05/bgCgIc81S8-m0_IvBuj3WQ] already exists"
-  # - name: Manually create the first alert index
-  #   ansible.builtin.uri:
-  #     url: "https://aws-dummy-ops-wazuh-indexer.lab:9200/wazuh-alerts-4.x-2025.10.05"
-  #     # url: "https://aws-dummy-ops-wazuh-indexer.lab:9200/wazuh-alerts-000001"
-  #     method: PUT
-  #     headers:
-  #       Content-Type: "application/json"
-  #     body: |
-  #       {
-  #         "settings": {
-  #           "number_of_shards": 1,
-  #           "number_of_replicas": 0
-  #         }
-  #       }
-  #     user: "admin"
-  #     password: "Str?wberrypie94"
-  #     force_basic_auth: yes
-  #     validate_certs: yes
-
   become: yes
