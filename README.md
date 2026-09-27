@@ -18,6 +18,35 @@
 
 # Architecture
 
+  CI/CD PIPELINE
+
+        USER
+         |
+  +-----------+-----------+
+  |                       |
+  GitHub Repository       Jenkins GUI
+  |                       |
+  Webhook Trigger          Nginx Proxy
+  |                       |
+  +-----------> Jenkins <+
+           |
+  +--------------------+--------------------+
+  |                    |                    |
+  v                    v                    v
+
+  TOMCAT DEPLOY        DOCKER DEPLOY        KUBERNETES DEPLOY
+  |                    |                    |
+  Maven Build          Ansible                Ansible
+  |                    |                    |
+  WAR Artifact        Docker Build          k8s Host
+  |                    |                    |
+  SCP to Tomcat        DockerHub             eksctl
+  |                    |                    |
+  Restart Service        New Image          Update Deployment
+  |                    |                    |
+  Running App        Restart Container       New Pods
+
+
 	Browser
 	│
 	│ HTTPS :443
