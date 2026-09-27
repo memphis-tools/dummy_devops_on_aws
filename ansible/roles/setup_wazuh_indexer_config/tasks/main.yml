@@ -45,16 +45,19 @@
         --cert /etc/wazuh-indexer/certs/aws_dummy_ops_wazuh_admin.crt
         --key /etc/wazuh-indexer/certs/aws_dummy_ops_wazuh_admin.key
 
+  # learning purposes, draft, we do not care about the dummy credentials
   - name: Update default admin password
     ansible.builtin.shell:
       cmd: '/usr/share/wazuh-indexer/plugins/opensearch-security/tools/wazuh-passwords-tool.sh -u admin -p Str?wberrypie94 -c /etc/wazuh-indexer/certs/aws_dummy_ops_wazuh_admin.crt -k /etc/wazuh-indexer/certs/aws_dummy_ops_wazuh_admin.key'
 
   # run the following commands to confirm that the installation is successful
+  # learning purposes, draft, we do not care about the dummy credentials
   - name: Check installation
     ansible.builtin.shell:
       cmd: 'curl -u admin:Str?wberrypie94 https://aws-dummy-ops-wazuh-indexer.lab:9200'
 
   # run the following command to check if the single-node or multi-node cluster is working correctly
+  # learning purposes, draft, we do not care about the dummy credentials
   - name: Check the single-node (or multi-node) cluster is working correctly
     ansible.builtin.shell:
       cmd: 'curl -u admin:Str?wberrypie94 https://aws-dummy-ops-wazuh-indexer.lab:9200/_cat/nodes?v'
