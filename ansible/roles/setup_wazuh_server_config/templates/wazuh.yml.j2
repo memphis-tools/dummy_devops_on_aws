@@ -1,0 +1,9 @@
+- module: wazuh
+  alerts:
+    enabled: true
+    var:
+      paths: ["/var/ossec/logs/alerts/alerts.json"]
+  archives:
+    enabled: false
+    var:
+      paths: ["/var/ossec/logs/archives/archives.json"]

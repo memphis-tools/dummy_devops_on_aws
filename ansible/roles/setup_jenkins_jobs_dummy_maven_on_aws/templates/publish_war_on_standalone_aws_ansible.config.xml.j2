@@ -1,0 +1,114 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<maven2-moduleset plugin="maven-plugin@3.27">
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@5.7.0">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <url>git@github.com:{{ GITHUB_USERNAME }}/{{ GITHUB_REPO_NAME }}.git</url>
+        <credentialsId>{{ JENKINS_CREDENTIALS_ID }}</credentialsId>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>*/main</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="empty-list"/>
+    <extensions/>
+  </scm>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers>
+    <com.cloudbees.jenkins.GitHubPushTrigger plugin="github@1.45.0">
+      <spec></spec>
+    </com.cloudbees.jenkins.GitHubPushTrigger>
+  </triggers>
+  <concurrentBuild>false</concurrentBuild>
+  <rootModule>
+    <groupId>com.example</groupId>
+    <artifactId>crook-ops</artifactId>
+  </rootModule>
+  <goals>clean install</goals>
+  <aggregatorStyleBuild>true</aggregatorStyleBuild>
+  <incrementalBuild>false</incrementalBuild>
+  <ignoreUpstremChanges>false</ignoreUpstremChanges>
+  <ignoreUnsuccessfulUpstreams>false</ignoreUnsuccessfulUpstreams>
+  <archivingDisabled>false</archivingDisabled>
+  <siteArchivingDisabled>false</siteArchivingDisabled>
+  <fingerprintingDisabled>false</fingerprintingDisabled>
+  <resolveDependencies>false</resolveDependencies>
+  <processPlugins>false</processPlugins>
+  <mavenValidationLevel>-1</mavenValidationLevel>
+  <runHeadless>false</runHeadless>
+  <disableTriggerDownstreamProjects>false</disableTriggerDownstreamProjects>
+  <blockTriggerWhenBuilding>true</blockTriggerWhenBuilding>
+  <settings class="jenkins.mvn.DefaultSettingsProvider"/>
+  <globalSettings class="jenkins.mvn.DefaultGlobalSettingsProvider"/>
+  <reporters/>
+  <publishers/>
+  <buildWrappers>
+    <com.cloudbees.jenkins.plugins.sshagent.SSHAgentBuildWrapper plugin="ssh-agent@386.v36cc0c7582f0">
+      <credentialIds>
+        <string>{{ JENKINS_CREDENTIALS_ID }}</string>
+      </credentialIds>
+      <ignoreMissing>false</ignoreMissing>
+    </com.cloudbees.jenkins.plugins.sshagent.SSHAgentBuildWrapper>
+  </buildWrappers>
+  <prebuilders/>
+  <postbuilders>
+    <jenkins.plugins.publish__over__ssh.BapSshBuilderPlugin plugin="publish-over-ssh@390.vb_f56e7405751">
+      <delegate>
+        <consolePrefix>SSH: </consolePrefix>
+        <delegate plugin="publish-over@0.22">
+          <publishers>
+            <jenkins.plugins.publish__over__ssh.BapSshPublisher plugin="publish-over-ssh@390.vb_f56e7405751">
+              <configName>ansible_on_aws</configName>
+              <verbose>false</verbose>
+              <transfers>
+                <jenkins.plugins.publish__over__ssh.BapSshTransfer>
+                  <remoteDirectory></remoteDirectory>
+                  <sourceFiles>**/*.war</sourceFiles>
+                  <excludes></excludes>
+                  <removePrefix>target</removePrefix>
+                  <remoteDirectorySDF>false</remoteDirectorySDF>
+                  <flatten>false</flatten>
+                  <cleanRemote>false</cleanRemote>
+                  <noDefaultExcludes>false</noDefaultExcludes>
+                  <makeEmptyDirs>false</makeEmptyDirs>
+                  <patternSeparator>[, ]+</patternSeparator>
+                  <execCommand>cd /opt/docker_projects
+./run_playbook.sh ansible build_and_publish.yml
+./run_playbook.sh docker run_container.yml</execCommand>
+                  <execTimeout>240000</execTimeout>
+                  <usePty>false</usePty>
+                  <useAgentForwarding>false</useAgentForwarding>
+                  <useSftpForExec>false</useSftpForExec>
+                  <keepFilePermissions>false</keepFilePermissions>
+                </jenkins.plugins.publish__over__ssh.BapSshTransfer>
+              </transfers>
+              <useWorkspaceInPromotion>false</useWorkspaceInPromotion>
+              <usePromotionTimestamp>false</usePromotionTimestamp>
+            </jenkins.plugins.publish__over__ssh.BapSshPublisher>
+          </publishers>
+          <continueOnError>false</continueOnError>
+          <failOnError>false</failOnError>
+          <alwaysPublishFromMaster>false</alwaysPublishFromMaster>
+          <hostConfigurationAccess class="jenkins.plugins.publish_over_ssh.BapSshPublisherPlugin" reference="../.."/>
+        </delegate>
+      </delegate>
+    </jenkins.plugins.publish__over__ssh.BapSshBuilderPlugin>
+  </postbuilders>
+  <runPostStepsIfResult>
+    <name>SUCCESS</name>
+    <ordinal>0</ordinal>
+    <color>BLUE</color>
+    <completeBuild>true</completeBuild>
+  </runPostStepsIfResult>
+</maven2-moduleset>

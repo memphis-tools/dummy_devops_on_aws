@@ -1,0 +1,4 @@
+[active]
+ansible ansible_host={{ ansible_private_ip }} ansible_user=devops ansible_ssh_private_key_file=~/.ssh/{{ ANSIBLE_SSH_KEY_FILENAME }}
+docker ansible_host={{ docker_private_ip }} ansible_user=devops ansible_ssh_private_key_file=~/.ssh/{{ ANSIBLE_SSH_KEY_FILENAME }}
+k8s ansible_host={{ k8s_private_ip }} ansible_user=devops ansible_ssh_private_key_file=~/.ssh/{{ ANSIBLE_SSH_KEY_FILENAME }}

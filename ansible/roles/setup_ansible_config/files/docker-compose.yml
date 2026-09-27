@@ -1,0 +1,20 @@
+services:
+  tomcat:
+    image: tomcat
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./conf/server.xml:/usr/local/tomcat/conf/server.xml
+      - ./conf/tomcat-users.xml:/usr/local/tomcat/conf/tomcat-users.xml
+      - ./conf/context.xml:/usr/local/tomcat/webapps/manager/META-INF/context.xml
+      - ./conf/context.xml:/usr/local/tomcat/webapps/host-manager/META-INF/context.xml
+      - ./conf/aws_dummy_ops_docker_tomcat.keystore:/usr/local/tomcat/secrets/aws_dummy_ops_docker_tomcat.keystore
+    ports:
+      - 8443:8443
+    networks:
+      - dummy_ops_network
+
+networks:
+  dummy_ops_network:
+    driver: bridge

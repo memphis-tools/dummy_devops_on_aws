@@ -1,0 +1,19 @@
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_ca
+prompt = no
+
+[req_distinguished_name]
+C = FR
+L = PARIS
+ST = IDF
+O = DUMMY_OPS_TEAM
+OU = DUMMY_DEV_TEAM
+CN = aws-dummy-ops-ca.lab
+emailAddress = root@localhost
+
+[v3_ca]
+keyUsage = cRLSign, keyCertSign
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid:always,issuer:always
+basicConstraints = critical, CA:true

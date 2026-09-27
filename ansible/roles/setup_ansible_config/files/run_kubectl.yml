@@ -1,0 +1,11 @@
+---
+- hosts: 'k8s'
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Undeploy the dummy-app on kubernetes
+      ansible.builtin.command:
+        cmd: 'kubectl delete deployment crook-ops-deployment'
+    - name: Deploy the dummy-app on kubernetes
+      ansible.builtin.command:
+        cmd: 'kubectl apply -f /home/devops/dummy_deployment.yml'

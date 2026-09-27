@@ -1,0 +1,40 @@
+---
+- hosts: docker
+  vars_files:
+    - vars/main.yml
+  become_user: devops
+  tasks:
+    - name: Retrieve secret from Secrets Manager
+      ansible.builtin.set_fact:
+        dockerhub_pat: "{{ lookup('amazon.aws.aws_secret', ANSIBLE_AWS_SECRET_ID_NAME, region=AWS_REGION) | from_json | json_query('DOCKERHUB_DOCKER_READONLY_PAT') }}"
+      no_log: True
+
+    - name: Log into DockerHub
+      community.docker.docker_login:
+        username: "{{ DOCKERHUB_USERNAME }}"
+        password: "{{ dockerhub_pat }}"
+        registry: https://index.docker.io
+
+    - name: Get infos on container
+      community.docker.docker_container_info:
+        name: docker_projects-tomcat-1
+      register: result
+
+    - name: Bring down the services (stop and remove)
+      community.docker.docker_compose_v2:
+        project_src: '/opt/docker_projects/'
+        state: stopped
+        remove_images: all
+        remove_volumes: yes
+      when: result.exists and result.container.State.Status == 'running'
+
+    - name: Pull an image
+      community.docker.docker_image:
+        name: memphistools/devops:dummy-tomcat-latest
+        source: pull
+        force_source: true
+
+    - name: Restart services
+      community.docker.docker_compose_v2:
+        project_src: '/opt/docker_projects'
+        state: present

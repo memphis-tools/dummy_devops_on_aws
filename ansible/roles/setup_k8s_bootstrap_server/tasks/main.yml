@@ -1,0 +1,51 @@
+---
+- name: Ensure .aws user folder exists
+  ansible.builtin.file:
+    path: '/home/devops/.aws'
+    state: directory
+    mode: '0750'
+    owner: devops
+    group: devops_users
+
+- name: Ensure .aws root folder exists
+  ansible.builtin.file:
+    path: '/root/.aws'
+    state: directory
+    mode: '0750'
+    owner: root
+    group: root
+
+- name: Template config and credentials files into devops .aws
+  ansible.builtin.template:
+    src: '{{ item }}'
+    dest: '/home/devops/.aws/{{ item }}'
+    owner: devops
+    group: devops_users
+    mode: '0600'
+  loop:
+    - 'config'
+    - 'credentials'
+
+- name: Template config and credentials files into /root/.aws/
+  ansible.builtin.template:
+    src: '{{ item }}'
+    dest: '/root/.aws/{{ item }}'
+    owner: root
+    group: root
+    mode: '0600'
+  loop:
+    - 'config'
+    - 'credentials'
+
+- name: Create EKS cluster
+  ansible.builtin.command:
+    cmd: "eksctl create cluster --name dummy-ops-eks --region eu-west-3 --node-type t2.small --nodes-min 2 --nodes-max 3"
+    chdir:  /home/devops/
+
+- name: Move .kube into devops home
+  ansible.builtin.copy:
+    src: /root/.kube
+    dest: /home/devops
+    owner: devops
+    group: devops_users
+    remote_src: yes

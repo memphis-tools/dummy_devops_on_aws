@@ -1,0 +1,75 @@
+jenkins:
+  systemMessage: "Jenkins configured automatically by Ansible"
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "{{ JENKINS_ADMIN_USER_USERNAME }}"
+          password: "{{ JENKINS_ADMIN_USER_PASSWORD }}"
+
+  authorizationStrategy:
+    globalMatrix:
+      permissions:
+        - "Overall/Administer:{{ JENKINS_ADMIN_USER_USERNAME }}"
+        - "Job/Read:{{ JENKINS_ADMIN_USER_USERNAME }}"
+        - "Job/Build:{{ JENKINS_ADMIN_USER_USERNAME }}"
+
+  disableRememberMe: false
+  numExecutors: 2
+  mode: NORMAL
+  scmCheckoutRetryCount: 0
+  labelString: ""
+  projectNamingStrategy: "standard"
+  markupFormatter: "plainText"
+  crumbIssuer: "standard"
+# Old parameter
+#  crumbIssuer:
+#    standard:
+#      excludeClientIPFromCrumb: false
+  remotingSecurity:
+    enabled: true
+
+unclassified:
+  location:
+    url: "https://aws-dummy-ops-jenkins.lab:8443/"
+    adminAddress: "admin@dummy-ops.dev"
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - basicSSHUserPrivateKey:
+              scope: GLOBAL
+              id: "{{ JENKINS_CREDENTIALS_ID }}"
+              description: "SSH key for connecting to build agent"
+              username: "{{ JENKINS_CREDENTIALS_ID }}"
+              privateKeySource:
+                directEntry:
+                  privateKey: "something useless which will be changed using setup_jenkins_config role"
+
+          - usernamePassword:
+              scope: GLOBAL
+              id: "{{ TOMCAT_DEPLOYER_CREDENTIAL_ID }}"
+              description: "Username and password for tomcat script user"
+              username: "{{ TOMCAT_DEPLOYER_USERNAME }}"
+              password: "{{ TOMCAT_DEPLOYER_PASSWORD }}"
+
+tool:
+  git:
+    installations:
+      - name: "Default Git"
+        home: "/usr/bin/git"
+
+  jdk:
+    installations:
+      - name: "jdk21"
+        home: "/usr/lib/jvm/java-21-openjdk-amd64"
+
+  maven:
+    installations:
+      - name: "maven-3.9.9"
+        properties:
+          - installSource:
+              installers:
+                - maven:
+                    id: "3.9.9"

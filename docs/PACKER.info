@@ -1,0 +1,29 @@
+About packages
+
+[network and general system utilities]
+tree → visualize directory structure.
+ca-certificates → root certificates for HTTPS verification.
+curl → command-line HTTP client.
+gnupg → GPG encryption/signing tools.
+net-tools → ifconfig, netstat, etc.
+dnsutils → DNS query tools like dig, nslookup.
+netcat-traditional → network debugging, TCP/UDP client/server.
+
+
+[security auditing and monitoring]
+lynis → security auditing and compliance tool.
+acct → process accounting (logs commands executed by users).
+sysstat → system performance monitoring (iostat, mpstat).
+auditd → audit daemon for system-level logging.
+chkrootkit → rootkit detection.
+fail2ban → bans IPs for repeated failed login attempts.
+libpam-pwquality → PAM module to enforce strong passwords.
+
+
+[system integrity, package verification, crypto]
+libcrack2 → library for password checking/cracking tools.
+apt-show-versions → show which package versions are installed/available.
+debsums → verify integrity of installed packages.
+libpam-tmpdir → secure temporary directories for users.
+apt-listbugs → show critical bugs before installing/upgrading packages.
+openssl → encryption, certificates, TLS tools.

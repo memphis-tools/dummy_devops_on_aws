@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crook-ops-deployment
+  labels:
+    app: dummy-tomcat-latest
+
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: crook-ops
+
+  template:
+    metadata:
+      labels:
+        app: crook-ops
+    spec:
+      containers:
+        - name: dummy-tomcat
+          image: memphistools/devops:dummy-tomcat-latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+      imagePullSecrets:
+        - name: dockerhub-creds
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1

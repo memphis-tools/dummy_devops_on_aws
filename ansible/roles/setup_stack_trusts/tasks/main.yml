@@ -1,0 +1,30 @@
+---
+- block:
+  - name: copy the jenkins fullchain certificate
+    ansible.builtin.copy:
+      src: ./files/aws_dummy_ops_jenkins_fullchain.crt
+      dest: /usr/local/share/ca-certificates/
+      owner: root
+      group: root
+      mode: 0640
+
+  - name: copy the tomcat fullchain certificate
+    ansible.builtin.copy:
+      src: ./files/aws_dummy_ops_tomcat_fullchain.crt
+      dest: /usr/local/share/ca-certificates/
+      owner: root
+      group: root
+      mode: 0640
+
+  - name: copy the docker-tomcat fullchain certificate
+    ansible.builtin.copy:
+      src: ./files/aws_dummy_ops_docker_tomcat_fullchain.crt
+      dest: /usr/local/share/ca-certificates/
+      owner: root
+      group: root
+      mode: 0640
+
+  - name: Update CA trust
+    ansible.builtin.command:
+      cmd: update-ca-certificates
+  become: yes

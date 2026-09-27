@@ -1,0 +1,1 @@
+0 * * * * devops bash -c 'export GH_TOKEN="{{ GITHUB_TOKEN }}"; /usr/bin/gh workflow run lead-rotation.yml --repo memphis-tools/crook-ops' >> /var/log/devops/lead-rotation.log 2>&1

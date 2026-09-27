@@ -1,0 +1,67 @@
+---
+- name: Retrieve secret from Secrets Manager
+  ansible.builtin.set_fact:
+    dockerhub_pat: "{{ lookup('amazon.aws.aws_secret', ANSIBLE_AWS_SECRET_ID_NAME, region=AWS_REGION) | from_json | json_query('DOCKERHUB_DOCKER_READONLY_PAT') }}"
+
+- name: Copy k8s setup files to dedicated user's home
+  ansible.builtin.copy:
+    src: '{{ item }}'
+    dest: '/home/devops/'
+    owner: devops
+    group: devops_users
+  loop:
+    - pod.yml
+    - dummy_deployment.yml
+    - dummy_service.yml
+    - run_kubectl.yml
+    - aws_dummy_ops_tomcat.keystore
+    - dummy_deployment_with_alb.yml
+    - dummy_service_with_alb.yml
+
+# Remember, TLS is not handled by tomcat. I just keep it there to remember or practise.
+- name: Touch the keystore passphrase file
+  ansible.builtin.file:
+    path: /home/devops/keystore-pass.properties
+    state: touch
+    owner: devops
+    group: devops_users
+    mode: 0600
+
+- name: Set the keystore passphrase file
+  ansible.builtin.lineinfile:
+    path: /home/devops/keystore-pass.properties
+    line: '{{ KEYSTORE_PASSWORD }}'
+  no_log: true
+
+# The task reports changed only when the secret are actually created/updated
+- name: Apply dummy dockerhub-creds pull secret
+  ansible.builtin.shell: |
+    kubectl create secret docker-registry dockerhub-creds \
+      --docker-server=https://index.docker.io/v1/ \
+      --docker-username={{ DOCKERHUB_USERNAME }} \
+      --docker-password={{ dockerhub_pat }} \
+      -n default \
+      --dry-run=client -o yaml | kubectl apply -f -
+  register: dockerhub_secret
+  changed_when: "'configured' in dockerhub_secret.stdout"
+
+# The task reports changed only when the secret are actually created/updated
+# Remember, TLS is not handled by tomcat. I just keep it there to remember or practise.
+- name: Apply dummy tomcat-secrets
+  ansible.builtin.shell: |
+    kubectl create secret generic tomcat-secrets \
+      --from-file=keystore-pass.properties=/home/devops/keystore-pass.properties \
+      -n default \
+      --dry-run=client -o yaml | kubectl apply -f -
+  register: tomcat_secrets
+  changed_when: "'configured' in tomcat_secrets.stdout"
+
+# The task reports changed only when the secret are actually created/updated
+- name: Apply dummy tomcat-keystore secret
+  ansible.builtin.shell: |
+    kubectl create secret generic tomcat-keystore \
+      --from-file=aws_dummy_ops_docker_tomcat.keystore=/home/devops/aws_dummy_ops_tomcat.keystore \
+      -n default \
+      --dry-run=client -o yaml | kubectl apply -f -
+  register: keystore_secret
+  changed_when: "'configured' in keystore_secret.stdout"

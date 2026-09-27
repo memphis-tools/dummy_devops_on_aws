@@ -1,0 +1,81 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<maven2-moduleset plugin="maven-plugin@3.27">
+  <actions/>
+  <description>We clone private pre-defined github repo: &#xd;
+Jenkins builds a WAR after &quot;git clone&quot; this dummy github private repo. &#xd;
+To perform the github credentials usage we use a github token. </description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@5.7.0">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <url>git@github.com:{{ GITHUB_USERNAME }}/{{ GITHUB_REPO_NAME }}.git</url>
+        <credentialsId>{{ JENKINS_CREDENTIALS_ID }}</credentialsId>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>*/main</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="empty-list"/>
+    <extensions/>
+  </scm>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <triggers>
+    <com.cloudbees.jenkins.GitHubPushTrigger plugin="github@1.45.0">
+      <spec></spec>
+    </com.cloudbees.jenkins.GitHubPushTrigger>
+  </triggers>
+  <concurrentBuild>false</concurrentBuild>
+  <rootModule>
+    <groupId>com.example</groupId>
+    <artifactId>crook-ops</artifactId>
+  </rootModule>
+  <goals>clean install</goals>
+  <aggregatorStyleBuild>true</aggregatorStyleBuild>
+  <incrementalBuild>false</incrementalBuild>
+  <ignoreUpstremChanges>false</ignoreUpstremChanges>
+  <ignoreUnsuccessfulUpstreams>false</ignoreUnsuccessfulUpstreams>
+  <archivingDisabled>false</archivingDisabled>
+  <siteArchivingDisabled>false</siteArchivingDisabled>
+  <fingerprintingDisabled>false</fingerprintingDisabled>
+  <resolveDependencies>false</resolveDependencies>
+  <processPlugins>false</processPlugins>
+  <mavenValidationLevel>-1</mavenValidationLevel>
+  <runHeadless>false</runHeadless>
+  <disableTriggerDownstreamProjects>false</disableTriggerDownstreamProjects>
+  <blockTriggerWhenBuilding>true</blockTriggerWhenBuilding>
+  <settings class="jenkins.mvn.DefaultSettingsProvider"/>
+  <globalSettings class="jenkins.mvn.DefaultGlobalSettingsProvider"/>
+  <reporters/>
+  <publishers>
+    <hudson.plugins.deploy.DeployPublisher plugin="deploy@1.17">
+      <adapters>
+        <hudson.plugins.deploy.tomcat.Tomcat9xAdapter>
+          <credentialsId>jenkins_tomcat_deployer</credentialsId>
+          <url>https://aws-dummy-ops-tomcat.lab:8443</url>
+          <alternativeDeploymentContext></alternativeDeploymentContext>
+          <path></path>
+        </hudson.plugins.deploy.tomcat.Tomcat9xAdapter>
+      </adapters>
+      <war>**/*.war</war>
+      <onFailure>false</onFailure>
+    </hudson.plugins.deploy.DeployPublisher>
+  </publishers>
+  <buildWrappers/>
+  <prebuilders/>
+  <postbuilders/>
+  <runPostStepsIfResult>
+    <name>SUCCESS</name>
+    <ordinal>0</ordinal>
+    <color>BLUE</color>
+    <completeBuild>true</completeBuild>
+  </runPostStepsIfResult>
+</maven2-moduleset>

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+JAVA_HOME=/usr/share/wazuh-indexer/jdk \
+  runuser -u wazuh-indexer -- /bin/bash \
+  -c "/usr/share/wazuh-indexer/plugins/opensearch-security/tools/securityadmin.sh \
+  -cd /etc/wazuh-indexer/opensearch-security \
+  -h aws-dummy-ops-wazuh-indexer.lab \
+  -cacert /etc/wazuh-indexer/certs/aws_dummy_ops_ca.crt \
+  -cert /etc/wazuh-indexer/certs/aws_dummy_ops_wazuh_admin.crt \
+  -key /etc/wazuh-indexer/certs/aws_dummy_ops_wazuh_admin.key -icl -nhnv"

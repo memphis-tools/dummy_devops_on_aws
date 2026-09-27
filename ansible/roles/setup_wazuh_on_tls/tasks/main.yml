@@ -1,0 +1,79 @@
+---
+- name: Gather only ansible_hostname
+  ansible.builtin.setup:
+    filter: ansible_hostname
+
+- block:
+  - name: Ensure /etc/wazuh-indexer/certs folder exist on wazuh_indexer
+    ansible.builtin.file:
+      path: /etc/wazuh-indexer/certs
+      state: directory
+      owner: wazuh-indexer
+      group: wazuh-indexer
+      mode: '0700'
+
+  - name: Extract the wazuh_all_certs_files.tgz
+    ansible.builtin.unarchive:
+      src: ./files/wazuh_all_certs_files.tgz
+      dest: /etc/wazuh-indexer/certs
+      owner: wazuh-indexer
+      group: wazuh-indexer
+      mode: '0400'
+
+  - name: Ensure /etc/wazuh-indexer/certs folder has correct permissions
+    ansible.builtin.file:
+      path: /etc/wazuh-indexer/certs
+      mode: '0700'
+
+  when: ansible_hostname == 'aws-dummy-ops-wazuh-indexer'
+  become: yes
+
+- block:
+  - name: Ensure /etc/filebeat/certs folder exist on wazuh_server
+    ansible.builtin.file:
+      path: /etc/filebeat/certs
+      state: directory
+      owner: root
+      group: root
+      mode: '0700'
+
+  - name: Extract the wazuh_all_certs_files.tgz
+    ansible.builtin.unarchive:
+      src: ./files/wazuh_all_certs_files.tgz
+      dest: /etc/filebeat/certs
+      owner: root
+      group: root
+      mode: '0400'
+
+  - name: Ensure /etc/filebeat/certs folder has correct permissions
+    ansible.builtin.file:
+      path: /etc/filebeat/certs
+      mode: '0700'
+
+  when: ansible_hostname == 'aws-dummy-ops-wazuh-server'
+  become: yes
+
+- block:
+  - name: Ensure /etc/wazuh-dashboard/certs folder exist on wazuh_dashboard
+    ansible.builtin.file:
+      path: /etc/wazuh-dashboard/certs
+      state: directory
+      owner: wazuh-dashboard
+      group: wazuh-dashboard
+      mode: '0700'
+
+  - name: Extract the wazuh_all_certs_files.tgz
+    ansible.builtin.unarchive:
+      src: ./files/wazuh_all_certs_files.tgz
+      dest: /etc/wazuh-dashboard/certs
+      owner: wazuh-dashboard
+      group: wazuh-dashboard
+      mode: '0400'
+
+  - name: Ensure /etc/wazuh-dashboard/certs folder has correct permissions
+    ansible.builtin.file:
+      path: /etc/wazuh-dashboard/certs
+      mode: '0700'
+
+  when: ansible_hostname == 'aws-dummy-ops-wazuh-dashboard'
+  become: yes

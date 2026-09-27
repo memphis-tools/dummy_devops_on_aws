@@ -1,0 +1,58 @@
+---
+- hosts: ansible
+  vars_files:
+    - vars/main.yml
+  tasks:
+    - name: Retrieve secret from Secrets Manager
+      ansible.builtin.set_fact:
+        dockerhub_pat: "{{ lookup('amazon.aws.aws_secret', ANSIBLE_AWS_SECRET_ID_NAME, region=AWS_REGION) | from_json | json_query('DOCKERHUB_ANSIBLE_RWD_PAT') }}"
+
+    - name: Log into DockerHub
+      community.docker.docker_login:
+        username: "{{ DOCKERHUB_USERNAME }}"
+        password: "{{ dockerhub_pat }}"
+        registry: https://index.docker.io
+        state: present
+
+    - name: Remove local custom tomcat image
+      community.docker.docker_image:
+        state: absent
+        name: "{{ DOCKERHUB_USERNAME }}/{{ DOCKERHUB_REPO_NAMESPACE }}:dummy-tomcat-latest"
+
+    - name: Get the current tomcat docker images on host
+      community.docker.docker_image_info:
+        name: 'tomcat:latest'
+      register: tomcat_info
+
+    - name: Pull tomcat image #if missing
+      community.docker.docker_image:
+        name: "tomcat:latest"
+        source: pull
+      when: tomcat_info.images | length == 0
+
+    - name: Build custom image with build args
+      community.docker.docker_image:
+        name: "dummy-tomcat"
+        build:
+          path: "/opt/docker_projects/"
+          args:
+            listen_port: 8443
+        source: build
+        force_source: true
+        force_tag: true
+
+    - name: Tag the Tomcat image
+      community.docker.docker_image:
+        name: "dummy-tomcat"
+        repository: "{{ DOCKERHUB_USERNAME }}/{{ DOCKERHUB_REPO_NAMESPACE }}:dummy-tomcat-latest"
+        #tag: "latest"
+        state: present
+        source: local
+
+    - name: Push the tagged image to DockerHub
+      community.docker.docker_image:
+        name: "dummy-tomcat"
+        repository: "{{ DOCKERHUB_USERNAME }}/{{ DOCKERHUB_REPO_NAMESPACE }}:dummy-tomcat-latest"
+        push: yes
+        state: present
+        source: local

@@ -1,0 +1,23 @@
+PS1="${debian_chroot:+($debian_chroot)}\h:\w\$ "
+umask 022
+
+# We want `ls' to be colorized:
+export LS_OPTIONS='--color=auto'
+eval "$(dircolors)"
+alias ls='ls $LS_OPTIONS'
+alias ll='ls $LS_OPTIONS -l'
+alias l='ls $LS_OPTIONS -lA'
+
+# Some more aliases:
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+HISTSIZE=50000
+HISTFILESIZE=100000
+HISTCONTROL=ignoreboth
+
+LS_COLORS=$LS_COLORS:'di=0;36'
+export LS_COLORS
+
+export HISTTIMEFORMAT="%F %T "

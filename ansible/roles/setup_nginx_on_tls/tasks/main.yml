@@ -1,0 +1,59 @@
+---
+- block:
+  - name: copy the nginx_jenkins.conf as the nginx default
+    ansible.builtin.copy:
+      src: ./files/nginx_jenkins.conf
+      dest: /etc/nginx/sites-available/default
+      owner: root
+      group: root
+      mode: 0640
+
+  - name: copy the Nginx x509 certificate files
+    ansible.builtin.copy:
+      src: ./files/{{ item }}
+      dest: /etc/nginx/secrets/
+      owner: root
+      group: root
+      mode: 0640
+    with_items:
+      - aws_dummy_ops_nginx_jenkins.crt
+      - aws_dummy_ops_nginx_jenkins_fullchain.crt
+      - aws_dummy_ops_nginx_jenkins.key
+      - aws_dummy_ops_nginx_jenkins_proxy_client.crt
+      - aws_dummy_ops_nginx_jenkins_proxy_client_fullchain.crt
+      - aws_dummy_ops_nginx_jenkins_proxy_client.key
+
+  - name: Find all Nginx x509 certificate files in the 'files' directory
+    ansible.builtin.find:
+      paths: /etc/nginx/secrets/
+      recurse: no
+      file_type: file
+    register: files_to_copy
+
+  - name: Set proper permissions on private keys
+    ansible.builtin.file:
+      path: "{{ item.path }}"
+      mode: '0600'
+    loop: "{{ files_to_copy.files }}"
+    when: "'key' in item.path"
+
+  - name: Set proper permissions on cert files
+    ansible.builtin.file:
+      path: "{{ item.path }}"
+      mode: '0644'
+    loop: "{{ files_to_copy.files }}"
+    when: "'crt' in item.path"
+
+  # To avoid re-generating dhparam.pem on every playbook run, use the creates option. (?)
+  - name: set the dh_params
+    ansible.builtin.shell:
+      cmd: 'openssl dhparam -out /etc/nginx/secrets/dhparam.pem 2048'
+      creates: /etc/nginx/secrets/dhparam.pem
+
+  - name: reload and restart nginx.service
+    ansible.builtin.systemd:
+      name: nginx.service
+      state: restarted
+      daemon_reload: yes
+    changed_when: false
+  become: yes

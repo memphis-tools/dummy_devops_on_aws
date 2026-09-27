@@ -1,0 +1,13 @@
+services:
+  tomcat:
+    image: memphistools/devops:dummy-tomcat-latest
+    ports:
+      - 8080:8080
+      - 8443:8443
+    networks:
+      - dummy_ops_network
+    volumes:
+      - ./keystore-pass.properties:/usr/local/tomcat/secrets/keystore-pass.properties
+networks:
+  dummy_ops_network:
+    driver: bridge

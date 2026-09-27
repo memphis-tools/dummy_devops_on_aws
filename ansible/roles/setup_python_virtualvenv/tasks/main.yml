@@ -1,0 +1,41 @@
+---
+# To use: community.general.jenkins_job
+# We need: python-jenkins
+# Error: You're running into the PEP 668 protection that recent Debian/Ubuntu systems have added.
+# This prevents pip3 from modifying system-wide Python unless you explicitly override it — to avoid breaking system-managed packages.
+# Other problem: python's requests will need to trust our self signed CA cert. We update the python's venv.
+- name: Install required packages
+  ansible.builtin.apt:
+    name: python3.13-venv
+    state: present
+    update_cache: yes
+
+- name: Ensure virtualenv directory exists
+  ansible.builtin.file:
+    path: /opt/jenkins-venv
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create Python virtual environment for Jenkins
+  ansible.builtin.command: python3 -m venv /opt/jenkins-venv
+  args:
+    creates: /opt/jenkins-venv/bin/activate
+
+- name: Install python-jenkins in the virtual environment
+  ansible.builtin.pip:
+    name: python-jenkins
+    virtualenv: /opt/jenkins-venv
+    virtualenv_command: python3 -m venv
+
+- name: Read remote CA file
+  ansible.builtin.slurp:
+    src: /usr/local/share/ca-certificates/aws_dummy_ops_jenkins_fullchain.crt
+  register: ca_cert
+
+- name: Add self-signed CA to Python venv certifi bundle
+  ansible.builtin.lineinfile:
+    path: /opt/jenkins-venv/lib/python3.13/site-packages/certifi/cacert.pem
+    line: "{{ ca_cert.content | b64decode }}"
+    insertafter: EOF

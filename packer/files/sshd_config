@@ -1,0 +1,27 @@
+Include /etc/ssh/sshd_config.d/*.conf
+Port 22
+HostKey /etc/ssh/ssh_host_ecdsa_key
+SyslogFacility AUTH
+LogLevel VERBOSE
+PermitRootLogin no
+LoginGraceTime 60
+# MACs (Message Authentication Codes) provide a way to ensure the data integrity and authenticity of SSH communication by verifying the message hasn't been tampered with during transmission.
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256
+MaxAuthTries 3
+MaxSessions 2
+maxstartups 10:30:100
+PubkeyAuthentication yes
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+UsePAM yes
+AllowAgentForwarding no
+AllowTcpForwarding no
+X11Forwarding no
+PrintMotd yes
+TCPKeepAlive no
+Compression no
+Banner /etc/issue.net
+ClientAliveCountMax 2
+ClientAliveInterval 120
+AcceptEnv LANG LC_*
+Subsystem	sftp	/usr/lib/openssh/sftp-server

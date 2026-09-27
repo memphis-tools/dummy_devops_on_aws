@@ -1,0 +1,38 @@
+---
+- block:
+  - name: Ensure perms ok for the /opt/docker_projects/
+    ansible.builtin.file:
+      path: /opt/docker_projects/
+      state: directory
+      owner: devops
+      group: devops_users
+      mode: 0750
+
+  - name: copy the Dockerfile and the docker-compose file
+    ansible.builtin.copy:
+      src: ./files/docker-compose.yml
+      dest: /opt/docker_projects/
+      owner: devops
+      group: devops_users
+
+  - name: Touch the keystore passphrase file
+    ansible.builtin.file:
+      path: /opt/docker_projects/keystore-pass.properties
+      state: touch
+      owner: devops
+      group: devops_users
+      mode: 0600
+
+  - name: Set the keystore passphrase file
+    ansible.builtin.lineinfile:
+      path: /opt/docker_projects/keystore-pass.properties
+      line: '{{ KEYSTORE_PASSWORD }}'
+    no_log: true
+
+  - name: Add user to sudoers file with no password prompt (the ansible host will use this user)
+    ansible.builtin.lineinfile:
+      path: /etc/sudoers
+      line: 'devops ALL=(ALL) NOPASSWD:ALL'
+      state: present
+      validate: '/usr/sbin/visudo -cf %s'  # Validate the sudoers file after modification
+  become: yes

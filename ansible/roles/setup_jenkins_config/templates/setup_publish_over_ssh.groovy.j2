@@ -1,0 +1,73 @@
+import jenkins.model.Jenkins
+import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder
+import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest
+import com.amazonaws.services.secretsmanager.model.GetSecretValueResult
+import groovy.json.JsonSlurper
+
+// Function to get secret value by name from AWS Secrets Manager
+def getSecret(secretName) {
+    def client = AWSSecretsManagerClientBuilder.defaultClient()
+    def getSecretValueRequest = new GetSecretValueRequest().withSecretId(secretName)
+    GetSecretValueResult getSecretValueResult = client.getSecretValue(getSecretValueRequest)
+
+    if(getSecretValueResult.secretString != null){
+        return getSecretValueResult.secretString
+    } else {
+        // If the secret is binary, decode here
+        return new String(getSecretValueResult.secretBinary.array())
+    }
+}
+
+// Load the passphrase dynamically
+def secretJson = getSecret("{{ JENKINS_AWS_SECRET_ID_NAME }}")
+def secretMap = new JsonSlurper().parseText(secretJson)
+def passphrase = secretMap.JENKINS_SSH_PASSPHRASE
+
+// Load plugin and related classes
+def pluginClass = Jenkins.instance.pluginManager.uberClassLoader.loadClass('jenkins.plugins.publish_over_ssh.BapSshPublisherPlugin')
+def hostConfigClass = Jenkins.instance.pluginManager.uberClassLoader.loadClass('jenkins.plugins.publish_over_ssh.BapSshHostConfiguration')
+def commonConfigClass = Jenkins.instance.pluginManager.uberClassLoader.loadClass('jenkins.plugins.publish_over_ssh.BapSshCommonConfiguration')
+
+// Get plugin descriptor
+def pluginDescriptor = Jenkins.instance.getDescriptor(pluginClass)
+
+// === Update global Jenkins SSH Key config ===
+def newCommonConfig = commonConfigClass.getConstructor(String, String, String, boolean)
+    .newInstance(passphrase, "", "/var/lib/jenkins/.ssh/{{ JENKINS_SSH_KEY_FILENAME }}", false)
+
+pluginDescriptor.commonConfig = newCommonConfig
+
+// === Create new host configuration ===
+def hostCommonConfig = commonConfigClass.getConstructor(String, String, String, boolean)
+    .newInstance("/var/lib/jenkins/.ssh/{{ JENKINS_SSH_KEY_FILENAME }}", passphrase, "", false)
+
+def hostConfig1 = hostConfigClass.newInstance()
+hostConfig1.setName("ansible_on_aws")
+hostConfig1.setHostname("aws-dummy-ops-ansible.lab")
+hostConfig1.setUsername("devops")
+hostConfig1.setRemoteRootDir("/opt/docker_projects")
+hostConfig1.setPort(22)
+hostConfig1.setTimeout(300000)
+hostConfig1.setOverrideKey(false)
+hostConfig1.setDisableExec(false)
+hostConfig1.setCommonConfig(hostCommonConfig)
+
+def hostConfig2 = hostConfigClass.newInstance()
+hostConfig2.setName("docker_on_aws")
+hostConfig2.setHostname("aws-dummy-ops-docker.lab")
+hostConfig2.setUsername("devops")
+hostConfig2.setRemoteRootDir("/opt/docker_projects")
+hostConfig2.setPort(22)
+hostConfig2.setTimeout(300000)
+hostConfig2.setOverrideKey(false)
+hostConfig2.setDisableExec(false)
+hostConfig2.setCommonConfig(hostCommonConfig)
+
+// Add hosts configuration to plugin descriptor
+pluginDescriptor.addHostConfiguration(hostConfig1)
+pluginDescriptor.addHostConfiguration(hostConfig2)
+
+// Save all changes at once
+pluginDescriptor.save()
+
+println "Updated global SSH key config and added new SSH host configuration"

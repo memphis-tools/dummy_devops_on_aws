@@ -1,0 +1,62 @@
+---
+- block:
+  - name: Template the opensearch.yml
+    ansible.builtin.template:
+      src: opensearch.yml.j2
+      dest: /etc/wazuh-indexer/opensearch.yml
+      owner: wazuh-indexer
+      group: wazuh-indexer
+      mode: 0660
+
+  - name: Reload and restart wazuh-indexer.service
+    ansible.builtin.systemd:
+      name: wazuh-indexer.service
+      state: restarted
+      daemon_reload: yes
+      enabled: yes
+
+  - name: Disabling the Wazuh package repositories after installing all components
+    ansible.builtin.shell:
+      cmd: 'sed -i "s/^deb /#deb /" /etc/apt/sources.list.d/wazuh.list'
+
+  - name: Refresh known packages
+    ansible.builtin.apt:
+      update_cache: yes
+
+  # since we set custom self signed certs, we can not run '/usr/share/wazuh-indexer/bin/indexer-security-init.sh'
+  - name: Template the cluster_init.sh to initialize the cluster
+    ansible.builtin.template:
+      src: cluster_init.sh.j2
+      dest: /tmp/cluster_init.sh
+      owner: wazuh-indexer
+      group: wazuh-indexer
+      mode: 0740
+
+  - name: Execute the cluster_init.sh
+    ansible.builtin.shell:
+      cmd: /tmp/cluster_init.sh
+
+  # verify that the .opendistro_security index is created
+  - name: Check if .opendistro_security index created
+    ansible.builtin.shell:
+      cmd: >
+        curl -X GET "https://aws-dummy-ops-wazuh-indexer.lab:9200/.opendistro_security/_search?pretty"
+        --cacert /etc/wazuh-indexer/certs/aws_dummy_ops_ca.crt
+        --cert /etc/wazuh-indexer/certs/aws_dummy_ops_wazuh_admin.crt
+        --key /etc/wazuh-indexer/certs/aws_dummy_ops_wazuh_admin.key
+
+  - name: Update default admin password
+    ansible.builtin.shell:
+      cmd: '/usr/share/wazuh-indexer/plugins/opensearch-security/tools/wazuh-passwords-tool.sh -u admin -p Str?wberrypie94 -c /etc/wazuh-indexer/certs/aws_dummy_ops_wazuh_admin.crt -k /etc/wazuh-indexer/certs/aws_dummy_ops_wazuh_admin.key'
+
+  # run the following commands to confirm that the installation is successful
+  - name: Check installation
+    ansible.builtin.shell:
+      cmd: 'curl -u admin:Str?wberrypie94 https://aws-dummy-ops-wazuh-indexer.lab:9200'
+
+  # run the following command to check if the single-node or multi-node cluster is working correctly
+  - name: Check the single-node (or multi-node) cluster is working correctly
+    ansible.builtin.shell:
+      cmd: 'curl -u admin:Str?wberrypie94 https://aws-dummy-ops-wazuh-indexer.lab:9200/_cat/nodes?v'
+
+  become: yes

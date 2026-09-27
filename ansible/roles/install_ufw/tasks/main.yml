@@ -1,0 +1,10 @@
+---
+- block:
+  - name: Configure UFW firewall - Allow SSH and enable
+    community.general.ufw:
+      rule: allow
+      port: 22
+      proto: tcp
+      state: enabled
+      policy: deny
+  become: yes

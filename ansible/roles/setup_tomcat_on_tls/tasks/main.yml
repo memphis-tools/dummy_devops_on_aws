@@ -1,0 +1,63 @@
+---
+- block:
+  - name: copy keystore and trustore into /opt/tomcat/conf
+    ansible.builtin.copy:
+      src: ./files/{{ item }}
+      dest: /opt/tomcat/conf/
+      owner: tomcat
+      group: tomcat
+      mode: 0640
+    with_items: ['aws_dummy_ops_tomcat.keystore']
+
+  - name: update context.xml for manager
+    ansible.builtin.copy:
+      src: ./files/context.xml
+      dest: /opt/tomcat/webapps/manager/META-INF/context.xml
+      owner: tomcat
+      group: tomcat
+
+  - name: update context.xml for host-manager
+    ansible.builtin.copy:
+      src: ./files/context.xml
+      dest: /opt/tomcat/webapps/host-manager/META-INF/context.xml
+      owner: tomcat
+      group: tomcat
+
+  - name: update server.xml
+    ansible.builtin.copy:
+      src: ./files/server.xml
+      dest: /opt/tomcat/conf/
+      owner: tomcat
+      group: tomcat
+
+  - name: update tomcat-users.xml
+    ansible.builtin.copy:
+      src: ./files/tomcat-users.xml
+      dest: /opt/tomcat/conf/
+      owner: tomcat
+      group: tomcat
+
+  - name: Set the tomcat.service
+    ansible.builtin.copy:
+      src: ./files/tomcat.service
+      dest: /usr/lib/systemd/system/tomcat.service
+      owner: root
+      group: root
+    changed_when: false
+
+  - name: Set /opt/tomcat/conf/keystore-pass.properties from ENV
+    ansible.builtin.copy:
+      dest: /opt/tomcat/conf/keystore-pass.properties
+      owner: tomcat
+      group: tomcat
+      mode: '0600'
+      content: '{{ KEYSTORE_PASSWORD }}'
+    no_log: true
+
+  - name: reload and restart tomcat.service
+    ansible.builtin.systemd:
+      name: tomcat.service
+      state: restarted
+      daemon_reload: yes
+    changed_when: false
+  become: yes

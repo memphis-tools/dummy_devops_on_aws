@@ -1,0 +1,18 @@
+server.host: 'aws-dummy-ops-wazuh-dashboard.lab'
+server.port: 443
+opensearch.hosts: 'https://aws-dummy-ops-wazuh-indexer.lab:9200'
+opensearch.ssl.verificationMode: certificate
+opensearch.username: admin
+opensearch.password: Str?wberrypie94
+opensearch.requestHeadersAllowlist: ["securitytenant","Authorization"]
+opensearch_security.multitenancy.enabled: false
+opensearch_security.readonly_mode.roles: ["kibana_read_only"]
+server.ssl.enabled: true
+server.ssl.key: "/etc/wazuh-dashboard/certs/aws_dummy_ops_wazuh_dashboard.key"
+server.ssl.certificate: "/etc/wazuh-dashboard/certs/aws_dummy_ops_wazuh_dashboard.crt"
+opensearch.ssl.certificateAuthorities: ["/etc/wazuh-dashboard/certs/aws_dummy_ops_ca.crt"]
+uiSettings.overrides.defaultRoute: /app/wz-home
+# Session expiration settings
+opensearch_security.cookie.ttl: 900000
+opensearch_security.session.ttl: 900000
+opensearch_security.session.keepalive: true

@@ -1,0 +1,34 @@
+---
+- name: Template job 'publish_war_on_standalone_aws_tomcat.config.xml.j2' locally
+  template:
+    src: publish_war_on_standalone_aws_tomcat.config.xml.j2
+    dest: "/tmp/config-publish_war_on_standalone_aws_tomcat.xml"
+  delegate_to: localhost
+  run_once: true
+  become: no
+
+- name: Template job 'publish_war_on_standalone_aws_ansible.config.xml.j2' locally
+  template:
+    src: publish_war_on_standalone_aws_ansible.config.xml.j2
+    dest: "/tmp/config-publish_war_on_standalone_aws_ansible.xml"
+  delegate_to: localhost
+  run_once: true
+  become: no
+
+#
+# Manage Jenkins jobs by using Jenkins REST API.
+- name: Create Jenkins job to publish a WAR on tomcat host
+  community.general.jenkins_job:
+    name: "publish_war_on_standalone_aws_tomcat"
+    config: "{{ lookup('file', '/tmp/config-publish_war_on_standalone_aws_tomcat.xml') }}"
+    url: "https://aws-dummy-ops-jenkins.lab:8443/"
+    user: "{{ JENKINS_ADMIN_USER_USERNAME }}"
+    password: "{{ JENKINS_ADMIN_USER_PASSWORD }}"
+
+- name: Create Jenkins job to publish a WAR on ansible host
+  community.general.jenkins_job:
+    name: "publish_war_on_standalone_aws_ansible"
+    config: "{{ lookup('file', '/tmp/config-publish_war_on_standalone_aws_ansible.xml') }}"
+    url: "https://aws-dummy-ops-jenkins.lab:8443/"
+    user: "{{ JENKINS_ADMIN_USER_USERNAME }}"
+    password: "{{ JENKINS_ADMIN_USER_PASSWORD }}"

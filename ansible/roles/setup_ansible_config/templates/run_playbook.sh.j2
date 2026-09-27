@@ -1,0 +1,13 @@
+#!/bin/bash
+
+export SSH_PASSPHRASE=$(aws secretsmanager get-secret-value --secret-id {{ ANSIBLE_AWS_SECRET_ID_NAME }} --query SecretString --output text | jq -r .ANSIBLE_SSH_PASSPHRASE)
+
+echo -e "#!/bin/bash\necho $SSH_PASSPHRASE" > ~/.ssh/tmp
+chmod 700 ~/.ssh/tmp
+
+eval $(ssh-agent -s)
+DISPLAY=:0 SSH_ASKPASS=~/.ssh/tmp ssh-add ~/.ssh/ansible_docker < /dev/null
+
+ansible-playbook -i inventory.ini -l $1 $2
+
+rm ~/.ssh/tmp

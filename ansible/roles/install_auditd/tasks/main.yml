@@ -1,0 +1,44 @@
+---
+- block:
+  - name: Install packages
+    ansible.builtin.apt:
+      name: "{{ item }}"
+      state: present
+      update_cache: yes
+    loop: [auditd, audispd-plugins]
+    register: apt_result
+    retries: 10
+    delay: 5
+    until: apt_result is succeeded
+
+  - name: Remove audit rules files
+    ansible.builtin.shell:
+      cmd: 'rm -f /etc/audit/rules.d/*'
+
+  - name: Template the auditd.conf
+    ansible.builtin.template:
+      src: auditd.conf.j2
+      dest: /etc/audit/auditd.conf
+      owner: root
+      group: root
+      mode: '0640'
+
+  - name: Copy rules
+    ansible.builtin.unarchive:
+      src: files/rules.tar.gz
+      dest: /etc/audit/rules.d/
+      owner: root
+      group: root
+      mode: '0640'
+      remote_src: no
+
+  - name: Restart auditd
+    ansible.builtin.service:
+      name: auditd
+      state: restarted
+      enabled: yes
+
+  - name: Load auditd rules
+    ansible.builtin.shell:
+      cmd: 'augenrules --load'
+  become: yes

@@ -1,0 +1,30 @@
+# A dummy example for learning
+apiVersion: apps/v1 # pour deployment on utilise cette syntaxe
+kind: Deployment
+metadata:
+  name: memphistools
+  labels:
+    app: tomcat #nom image sur docker hub
+
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: tomcat
+
+  template: #template décrit comment crée le pod
+    metadata:
+      labels:
+        app: tomcat
+    spec:
+      containers:
+        - name: tomcat
+          image: memphistools/tomcat
+          imagePullPolicy: Always #whenever we excute this deployment file it will pull the latest image
+          ports:
+            - containerPort: 8080
+  strategy: #permet de s'asurer qu'on aura tjs un container dispo
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1

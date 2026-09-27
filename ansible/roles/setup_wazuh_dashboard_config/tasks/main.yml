@@ -1,0 +1,33 @@
+---
+- block:
+  - name: Template the opensearch.yml
+    ansible.builtin.template:
+      src: opensearch_dashboards.yml.j2
+      dest: /etc/wazuh-dashboard/opensearch_dashboards.yml
+      owner: wazuh-dashboard
+      group: wazuh-dashboard
+      mode: 0660
+
+  - name: Ensure path /usr/share/wazuh-dashboard/data/wazuh/config exists
+    ansible.builtin.file:
+      path: /usr/share/wazuh-dashboard/data/wazuh/config/
+      state: directory
+      owner: wazuh-dashboard
+      group: wazuh-dashboard
+      mode: 0750
+
+  - name: Template the wazuh.yml
+    ansible.builtin.template:
+      src: wazuh.yml.j2
+      dest: /usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml
+      owner: wazuh-dashboard
+      group: wazuh-dashboard
+      mode: 0660
+
+  - name: Reload and restart wazuh-dashboard.service
+    ansible.builtin.systemd:
+      name: wazuh-dashboard.service
+      state: restarted
+      daemon_reload: yes
+      enabled: yes
+  become: yes

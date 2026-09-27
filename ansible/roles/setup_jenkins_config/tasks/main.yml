@@ -1,0 +1,120 @@
+---
+# Jenkins Configuration as Code
+- name: Deploy JCasC config
+  ansible.builtin.template:
+    src: jenkins.yaml.j2
+    dest: /var/lib/jenkins/jenkins.yaml
+    owner: jenkins
+    group: jenkins
+    mode: '0644'
+  changed_when: false
+  notify: Restart Jenkins
+
+- name: Ensure the init.groovy.d folder exist
+  ansible.builtin.file:
+    path: '/var/lib/jenkins/init.groovy.d'
+    state: directory
+    owner: jenkins
+    group: jenkins
+    mode: '0750'
+
+- name: Deploy the groovy script used to setup plugin Publish Over SSH
+  ansible.builtin.template:
+    src: setup_publish_over_ssh.groovy.j2
+    dest: /var/lib/jenkins/init.groovy.d/setup_publish_over_ssh.groovy
+    owner: jenkins
+    group: jenkins
+    mode: '0644'
+  changed_when: false
+
+- name: Add github.com to Jenkins known_hosts
+  ansible.builtin.shell:
+    cmd: runuser -u jenkins -- ssh-keyscan github.com >> /var/lib/jenkins/.ssh/known_hosts
+
+- name: Restart Jenkins
+  ansible.builtin.service:
+    name: jenkins
+    state: restarted
+
+- name: Get Jenkins CSRF Crumb
+  ansible.builtin.shell:
+    cmd: |
+      CRUMB=$(curl "https://aws-dummy-ops-jenkins.lab:8443/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,%22:%22,//crumb)" --cookie-jar /tmp/cookies.txt --user '{{ JENKINS_ADMIN_USER_USERNAME }}:{{ JENKINS_ADMIN_USER_PASSWORD }}')
+      echo $CRUMB > /tmp/temp_crumb
+    executable: /bin/bash
+
+- name: Read the crumb from file
+  ansible.builtin.slurp:
+    src: /tmp/temp_crumb
+  register: crumb_file
+
+- name: Generate API token
+  ansible.builtin.shell:
+    cmd: |
+      curl --data 'newTokenName=jenkins_user_apitoken' \
+      -b /tmp/cookies.txt \
+      -H "{{ crumb_file.content | b64decode | trim }}" \
+      --user '{{ JENKINS_ADMIN_USER_USERNAME }}:{{ JENKINS_ADMIN_USER_PASSWORD }}' \
+      'https://aws-dummy-ops-jenkins.lab:8443/user/{{ JENKINS_ADMIN_USER_USERNAME }}/descriptorByName/jenkins.security.ApiTokenProperty/generateNewToken'
+    executable: /bin/bash
+  register: temp_result
+
+- name: Set the generated ApiToken as a fact
+  ansible.builtin.set_fact:
+    jenkins_user_apitoken: "{{ (temp_result.stdout | from_json)['data']['tokenValue'] }}"
+
+- name: Copy the private key as a file on remote host
+  ansible.builtin.copy:
+    content: "{{ JENKINS_SSH_PRIVATE_KEY }}"
+    dest: /tmp/private_key.pem
+    mode: '0600'
+
+# # NOTICE the no_log: Prevent this task from showing up in logs
+- name: Fetch and Define the SSH passphrase from AWS Secrets Manager
+  ansible.builtin.shell: |
+    JENKINS_SSH_PASSPHRASE=$(aws secretsmanager get-secret-value --secret-id {{ JENKINS_AWS_SECRET_ID_NAME }} --query SecretString --output text | jq -r .JENKINS_SSH_PASSPHRASE)
+    PRIVATE_KEY=$(cat /tmp/private_key.pem)
+
+    curl -X POST \
+    -u jenkins-admin:{{ jenkins_user_apitoken }} \
+    -H "Content-Type: application/xml" \
+    -d "<com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey>
+           <scope>GLOBAL</scope>
+           <id>{{ JENKINS_CREDENTIALS_ID }}</id>
+           <description>Updated SSH key</description>
+           <username>{{ JENKINS_ADMIN_USER_USERNAME }}</username>
+           <privateKeySource class=\"com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey\$DirectEntryPrivateKeySource\">
+             <privateKey><![CDATA[${PRIVATE_KEY}]]></privateKey>
+           </privateKeySource>
+           <passphrase>${JENKINS_SSH_PASSPHRASE}</passphrase>
+         </com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey>" \
+    "https://aws-dummy-ops-jenkins.lab:8443/credentials/store/system/domain/_/credential/{{ JENKINS_CREDENTIALS_ID }}/config.xml"
+  no_log: true
+
+
+- name: Delete ALL API token, still a try BUT WE NEED TO REMOVE ANY user APITOKEN AT EACH START
+  ansible.builtin.shell:
+    cmd: |
+      curl -X POST \
+      -b /tmp/cookies.txt \
+      -H "{{ crumb_file.content | b64decode | trim }}" \
+      --user '{{ JENKINS_ADMIN_USER_USERNAME }}:{{ JENKINS_ADMIN_USER_PASSWORD }}' \
+      'https://aws-dummy-ops-jenkins.lab:8443/user/{{ JENKINS_ADMIN_USER_USERNAME }}/descriptorByName/jenkins.security.ApiTokenProperty/revoke?tokenName=jenkins_user_apitoken'
+    executable: /bin/bash
+
+- name: Delete Jenkins API token, still a try, BUT WE NEED TO REMOVE ANY user APITOKEN AT EACH START
+  ansible.builtin.shell:
+    cmd: |
+      curl --request POST \
+        -b /tmp/cookies.txt \
+        -H "{{ crumb_file.content | b64decode | trim }}" \
+        --user '{{ JENKINS_ADMIN_USER_USERNAME }}:{{ JENKINS_ADMIN_USER_PASSWORD }}' \
+        "https://aws-dummy-ops-jenkins.lab:8443/user/{{ JENKINS_ADMIN_USER_USERNAME }}/descriptorByName/jenkins.security.ApiTokenProperty/deleteToken?tokenName=jenkins_user_apitoken"
+    executable: /bin/bash
+  register: delete_result
+
+- name: Purge temp files in temp
+  ansible.builtin.file:
+    path: '/tmp/{{ item }}'
+    state: 'absent'
+  with_items: ['cookies.txt', 'temp_crumb', 'private_key.pem']

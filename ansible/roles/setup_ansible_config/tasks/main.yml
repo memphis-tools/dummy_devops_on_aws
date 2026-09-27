@@ -1,0 +1,110 @@
+---
+- block:
+  - name: Ensure perms are correct for docker_projects
+    ansible.builtin.file:
+      path: /opt/docker_projects
+      state: directory
+      owner: devops
+      group: devops_users
+      mode: '0755'
+
+  - name: Create directories if it does not exist
+    ansible.builtin.file:
+      path: /opt/docker_projects/{{ item }}
+      state: directory
+      owner: devops
+      group: devops_users
+      mode: '0755'
+    loop: ['conf', 'secrets', 'vars']
+
+  - name: Copy keystore and trustore into /opt/docker_projects/secrets
+    ansible.builtin.copy:
+      src: ./files/{{ item }}
+      dest: /opt/docker_projects/secrets/
+      owner: devops
+      group: devops_users
+      mode: 0640
+    with_items: ['aws_dummy_ops_docker_tomcat.keystore']
+
+  - name: Copy context.xml (for manager and host-manager)
+    ansible.builtin.copy:
+      src: ./files/{{ item }}
+      dest: /opt/docker_projects/conf/
+      owner: devops
+      group: devops_users
+    loop:
+      - 'context.xml'
+      - 'server.xml'
+      - 'tomcat-users.xml'
+
+  - name: Copy the Dockerfile and playbooks files
+    ansible.builtin.copy:
+      src: ./files/{{ item }}
+      dest: /opt/docker_projects/
+      owner: devops
+      group: devops_users
+    loop:
+      - 'Dockerfile'
+      - 'run_container.yml'
+      - 'build_and_publish.yml'
+      - 'run_kubectl.yml'
+      - 'run_kubectl_service.yml'
+      - 'run_kubectl_service_with_alb'
+
+  - name: Copy ansible.cfg file
+    ansible.builtin.copy:
+      src: ./files/ansible.cfg
+      dest: /opt/docker_projects/
+      owner: devops
+      group: devops_users
+
+  - name: Template vars file
+    ansible.builtin.template:
+      src: vars_main.yml.j2
+      dest: /opt/docker_projects/vars/main.yml
+      owner: devops
+      group: devops_users
+
+  - name: Template the stack's inventory.ini
+    ansible.builtin.template:
+      src: inventory.ini.j2
+      dest: /opt/docker_projects/inventory.ini
+      owner: devops
+      group: devops_users
+      mode: 0640
+
+  - name: Template the run_playbook.sh.j2 script
+    ansible.builtin.template:
+      src: run_playbook.sh.j2
+      dest: /opt/docker_projects/run_playbook.sh
+      owner: devops
+      group: devops_users
+      mode: 0700
+
+  - name: Template the stack's inventory.ini
+    ansible.builtin.template:
+      src: inventory.ini.j2
+      dest: /opt/docker_projects/inventory.ini
+      owner: devops
+      group: devops_users
+      mode: 0640
+
+  - name: Template the lead-rotation
+    ansible.builtin.template:
+      src: lead-rotation.j2
+      dest: /etc/cron.d/lead-rotation
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: Add devops user to sudoers file with no password prompt (the ansible host will use this user to build locally the docker image)
+    ansible.builtin.lineinfile:
+      path: /etc/sudoers
+      line: 'devops ALL=(ALL) NOPASSWD:ALL'
+      state: present
+      validate: '/usr/sbin/visudo -cf %s'  # Validate the sudoers file after modification
+
+  - name: Install ansible-galaxy collection for community.docker (for debian12 or earlier)
+    ansible.builtin.shell:
+      cmd: 'ansible-galaxy collection install community.docker'
+  become: yes

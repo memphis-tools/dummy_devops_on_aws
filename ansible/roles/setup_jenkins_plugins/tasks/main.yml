@@ -1,0 +1,65 @@
+---
+- name: Check if initialAdminPassword file exists
+  ansible.builtin.stat:
+    path: /var/lib/jenkins/secrets/initialAdminPassword
+  register: jenkins_initial_password_file
+
+- block:
+  - name: Get initial admin password from file
+    ansible.builtin.slurp:
+      src: /var/lib/jenkins/secrets/initialAdminPassword
+    register: jenkins_password
+    changed_when: false
+
+  - name: Install Jenkins plugins
+    community.general.jenkins_plugin:
+      name: "{{ item }}"
+      url_username: admin
+      url_password: "{{ jenkins_password.content | b64decode | trim }}"
+      url: https://aws-dummy-ops-jenkins.lab:8443
+    loop:
+      - aws-secrets-manager-credentials-provider
+      - aws-secrets-manager-secret-source
+      - aws-java-sdk-minimal
+      - aws-java-sdk-secretsmanager
+      - configuration-as-code
+      - deploy
+      - github-pullrequest
+      - maven-plugin
+      - matrix-auth
+      - publish-over-ssh
+      - ssh-agent
+      - workflow-aggregator
+
+  - name: Ensure initialAdminPassword file is removed
+    ansible.builtin.file:
+      path: /var/lib/jenkins/secrets/initialAdminPassword
+      state: absent
+  when: jenkins_initial_password_file.stat.exists
+
+- block:
+  - name: Use provided admin password from vars
+    set_fact:
+      jenkins_password:
+        content: "{{ JENKINS_ADMIN_USER_PASSWORD | b64encode }}"
+
+  - name: Install Jenkins plugins
+    community.general.jenkins_plugin:
+      name: "{{ item }}"
+      url_username: "{{ JENKINS_ADMIN_USER_USERNAME }}"
+      url_password: "{{ jenkins_password.content | b64decode | trim }}"
+      url: https://aws-dummy-ops-jenkins.lab:8443
+    loop:
+      - aws-secrets-manager-credentials-provider
+      - aws-secrets-manager-secret-source
+      - aws-java-sdk-minimal
+      - aws-java-sdk-secretsmanager
+      - configuration-as-code
+      - deploy
+      - github-pullrequest
+      - maven-plugin
+      - matrix-auth
+      - publish-over-ssh
+      - ssh-agent
+      - workflow-aggregator
+  when: not jenkins_initial_password_file.stat.exists

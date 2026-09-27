@@ -1,0 +1,20 @@
+---
+- block:
+  - name: Ensure correct host entries are present in /etc/hosts
+    ansible.builtin.lineinfile:
+      path: /etc/hosts
+      regexp: '.*\s+{{ item.hostname | regex_escape() }}'
+      line: '{{ item.ip }} {{ item.hostname }}'
+      state: present
+      backup: yes
+    loop:
+      - { ip: '{{ jenkins_private_ip }}', hostname: 'aws-dummy-ops-jenkins.lab' }
+      - { ip: '{{ tomcat_private_ip }}', hostname: 'aws-dummy-ops-tomcat.lab' }
+      - { ip: '{{ docker_private_ip }}', hostname: 'aws-dummy-ops-docker.lab aws-dummy-ops-docker-tomcat.lab' }
+      - { ip: '{{ k8s_private_ip }}', hostname: 'aws-dummy-ops-k8s.lab' }
+      - { ip: '{{ ansible_private_ip }}', hostname: 'aws-dummy-ops-ansible.lab' }
+      - { ip: '{{ nginx_private_ip }}', hostname: 'aws-dummy-ops-nginx.lab aws-dummy-ops-nginx-jenkins-proxy-client.lab' }
+      - { ip: '{{ wazuh_dashboard_private_ip }}', hostname: 'aws-dummy-ops-wazuh-dashboard.lab' }
+      - { ip: '{{ wazuh_indexer_private_ip }}', hostname: 'aws-dummy-ops-wazuh-indexer.lab' }
+      - { ip: '{{ wazuh_server_private_ip }}', hostname: 'aws-dummy-ops-wazuh-server.lab' }
+  become: yes

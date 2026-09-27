@@ -1,0 +1,18 @@
+# /usr/lib/systemd/system/tomcat.service
+[Unit]
+Description=A tomcat systemd service
+Requires=network.target
+After=network.target
+
+[Service]
+Type=forking
+PrivateTmp=yes
+ExecStart=/opt/tomcat/bin/startup.sh
+ExecStop=/opt/tomcat/bin/shutdown.sh
+User=tomcat
+Group=tomcat
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

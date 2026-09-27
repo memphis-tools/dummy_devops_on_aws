@@ -1,0 +1,8 @@
+---
+- hosts: 'k8s'
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Start the kubernetes service attached to the dummy-app
+      ansible.builtin.command:
+        cmd: 'kubectl apply -f /home/devops/dummy_service.yml'

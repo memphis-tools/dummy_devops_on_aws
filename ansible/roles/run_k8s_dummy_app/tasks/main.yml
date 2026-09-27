@@ -1,0 +1,8 @@
+---
+- name: Apply the dummy deployment without AWS ALB
+  ansible.builtin.shell:
+    cmd: 'kubectl apply -f /home/devops/dummy_deployment.yml'
+
+- name: Create the dummy loadbalancer service without AWS ALB
+  ansible.builtin.command:
+    cmd: 'kubectl apply -f /home/devops/dummy_service.yml'

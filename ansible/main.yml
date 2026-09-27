@@ -1,0 +1,191 @@
+---
+# - name: Deploy Auditd
+#   hosts: 'ansible,docker,jenkins,nginx,tomcat'
+#   become: yes
+#   gather_facts: false
+#   vars_files:
+#     - vars/main.yml
+#   vars:
+#     ansible_python_interpreter: auto
+#   roles:
+#     - install_auditd
+#
+# - name: Deploy AIDE
+#   hosts: 'ansible,docker,jenkins,nginx,tomcat'
+#   become: yes
+#   gather_facts: false
+#   vars_files:
+#     - vars/main.yml
+#   vars:
+#     ansible_python_interpreter: auto
+#   roles:
+#     - install_aide
+
+- name: Post config Jenkins using auto ansible_python_interpreter
+  hosts: 'jenkins'
+  become: yes
+  gather_facts: false
+  vars_files:
+    - vars/main.yml
+    - secrets/jenkins
+  vars:
+    ansible_python_interpreter: auto
+  roles:
+    - setup_stack_trusts
+    - setup_dns_local_resolver
+    - setup_jenkins_on_tls
+    - setup_jenkins_plugins
+    - setup_jenkins_config
+    - setup_python_virtualvenv
+    - install_wazuh_agent
+
+- name: Post config Jenkins using the /opt/jenkins-venv
+  hosts: 'jenkins'
+  become: yes
+  gather_facts: false
+  vars_files:
+    - vars/main.yml
+  roles:
+    - setup_jenkins_jobs_dummy_maven_on_aws
+
+- name: Post config Tomcat
+  hosts: 'tomcat'
+  become: yes
+  gather_facts: false
+  vars_files:
+    - vars/main.yml
+    - secrets/keystores_passphrase
+  vars:
+    ansible_python_interpreter: auto
+  roles:
+    - setup_stack_trusts
+    - setup_dns_local_resolver
+    - setup_tomcat_on_tls
+    - install_wazuh_agent
+
+- name: Post config Docker
+  hosts: 'docker'
+  become: yes
+  gather_facts: false
+  vars_files:
+    - vars/main.yml
+    - secrets/keystores_passphrase
+  vars:
+    ansible_python_interpreter: auto
+  roles:
+    - setup_stack_trusts
+    - setup_dns_local_resolver
+    - setup_docker_on_tls
+    - install_wazuh_agent
+
+- name: Post config k8s
+  hosts: 'k8s'
+  become: yes
+  gather_facts: false
+  vars_files:
+    - vars/main.yml
+    - secrets/keystores_passphrase
+    - secrets/eks-user.creds
+  vars:
+    ansible_python_interpreter: auto
+  roles:
+    - setup_stack_trusts
+    - setup_dns_local_resolver
+    - install_wazuh_agent
+  tasks:
+    - name: Create cluster with eksctl
+      import_role:
+        name: setup_k8s_bootstrap_server
+      tags:
+        - setup_k8s_bootstrap_server
+    - name: Setup the dummy k8s deployment with or without AWS ALB
+      import_role:
+        name: setup_k8s_dummy_app
+      tags:
+        - setup_k8s_dummy_app
+    - name: Run the dummy k8s deployment without AWS ALB
+      import_role:
+        name: run_k8s_dummy_app
+      tags:
+        - run_k8s_dummy_app
+    - name: Run the dummy k8s deployment with AWS ALB
+      import_role:
+        name: run_k8s_dummy_app_with_alb
+      tags:
+        - run_k8s_dummy_app_with_alb
+    - name: Destroy cluster with eks
+      import_role:
+        name: destroy_k8s_bootstrap_server
+      tags:
+        - destroy_k8s_bootstrap_server
+
+- name: Post config Ansible
+  hosts: 'ansible'
+  become: yes
+  gather_facts: false
+  vars_files:
+    - vars/main.yml
+    - secrets/gh.token
+  vars:
+    ansible_python_interpreter: auto
+  roles:
+    - setup_stack_trusts
+    - setup_dns_local_resolver
+    - setup_ansible_config
+    - install_wazuh_agent
+
+- name: Post config Nginx
+  hosts: 'nginx'
+  become: yes
+  gather_facts: false
+  vars_files:
+    - vars/main.yml
+  vars:
+    ansible_python_interpreter: auto
+  roles:
+    - setup_stack_trusts
+    - setup_dns_local_resolver
+    - setup_nginx_on_tls
+    - install_wazuh_agent
+
+- name: Post config Wazuh Indexer
+  hosts: 'wazuh_indexer'
+  become: yes
+  gather_facts: false
+  vars_files:
+    - vars/main.yml
+  vars:
+    ansible_python_interpreter: auto
+  roles:
+    - setup_stack_trusts
+    - setup_dns_local_resolver
+    - setup_wazuh_on_tls
+    - setup_wazuh_indexer_config
+
+- name: Post config Wazuh Server
+  hosts: 'wazuh_server'
+  become: yes
+  gather_facts: false
+  vars_files:
+    - vars/main.yml
+  vars:
+    ansible_python_interpreter: auto
+  roles:
+    - setup_stack_trusts
+    - setup_dns_local_resolver
+    - setup_wazuh_on_tls
+    - setup_wazuh_server_config
+
+- name: Post config Wazuh Dashboard
+  hosts: 'wazuh_dashboard'
+  become: yes
+  gather_facts: false
+  vars_files:
+    - vars/main.yml
+  vars:
+    ansible_python_interpreter: auto
+  roles:
+    - setup_stack_trusts
+    - setup_dns_local_resolver
+    - setup_wazuh_on_tls
+    - setup_wazuh_dashboard_config

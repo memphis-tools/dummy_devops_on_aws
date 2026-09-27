@@ -1,0 +1,21 @@
+---
+- name: Move .kube into root home
+  ansible.builtin.copy:
+    src: /home/devops/.kube
+    dest: /root/.kube
+    owner: root
+    group: root
+    remote_src: yes
+
+- name: Check if EKS cluster exists
+  ansible.builtin.command:
+    cmd: "eksctl get cluster dummy-ops-eks --region eu-west-3"
+  register: eks_cluster
+  changed_when: false
+  failed_when: false
+
+- name: Delete EKS cluster
+  ansible.builtin.command:
+    cmd: "eksctl delete cluster dummy-ops-eks --region eu-west-3 --wait"
+    chdir: /root/
+  when: eks_cluster.rc == 0

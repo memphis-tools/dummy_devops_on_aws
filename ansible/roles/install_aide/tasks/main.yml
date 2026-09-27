@@ -1,0 +1,16 @@
+---
+- block:
+  - name: Install AIDE
+    ansible.builtin.apt:
+      name: aide
+      state: present
+      update_cache: yes
+
+  - name: Initialize AIDE database
+    ansible.builtin.command:
+      cmd: 'aideinit'
+
+  - name: Save initial AIDE database
+    ansible.builtin.command:
+      cmd: 'mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db'
+  become: yes

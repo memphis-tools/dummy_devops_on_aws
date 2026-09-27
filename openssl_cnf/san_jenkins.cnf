@@ -1,0 +1,21 @@
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = req_ext
+prompt = no
+
+[req_distinguished_name]
+C = FR
+L = PARIS
+ST = IDF
+O = DUMMY_OPS_TEAM
+OU = DUMMY_DEV_TEAM
+CN = aws-dummy-ops-jenkins.lab
+emailAddress = root@localhost
+
+[req_ext]
+basicConstraints = CA:FALSE
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = aws-dummy-ops-jenkins.lab
+DNS.2 = *.aws-dummy-ops-jenkins.lab

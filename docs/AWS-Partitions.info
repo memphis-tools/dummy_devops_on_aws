@@ -1,0 +1,3 @@
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/RootDeviceStorage.html
+
+Use the default root partition, and add esb volumes if needed.

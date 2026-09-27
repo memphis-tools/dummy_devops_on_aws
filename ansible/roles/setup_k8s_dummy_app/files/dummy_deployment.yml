@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dummy-ops
+  labels:
+    app: dummy-tomcat-latest
+
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: dummy-tomcat
+
+  template:
+    metadata:
+      labels:
+        app: dummy-tomcat
+    spec:
+      containers:
+        - name: dummy-tomcat
+          image: memphistools/devops:dummy-tomcat-latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+            - containerPort: 8443
+          volumeMounts:
+            - name: tomcat-secrets-volume
+              mountPath: /usr/local/tomcat/secrets/keystore-pass.properties
+              subPath: keystore-pass.properties
+              readOnly: true
+            - name: keystore-volume
+              mountPath: /usr/local/tomcat/secrets/aws_dummy_ops_docker_tomcat.keystore
+              subPath: aws_dummy_ops_docker_tomcat.keystore
+              readOnly: true
+      imagePullSecrets:
+        - name: dockerhub-creds
+      volumes:
+        - name: tomcat-secrets-volume
+          secret:
+            secretName: tomcat-secrets
+        - name: keystore-volume
+          secret:
+            secretName: tomcat-keystore
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1

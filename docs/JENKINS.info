@@ -1,0 +1,17 @@
+Jenkins (or more precisely, the ssh-credentials plugin + Java/libcrypto) does not reliably support ED25519 private keys, especially when used with passphrases.
+
+Key points:
+
+ED25519 private keys use the new OpenSSH format by default (-----BEGIN OPENSSH PRIVATE KEY-----) with bcrypt KDF for passphrases.
+
+Jenkins’ ssh-credentials plugin relies on Java’s crypto libraries, which cannot read this format.
+
+That’s why you keep getting the error in libcrypto error.
+
+RSA keys in PEM format (-----BEGIN RSA PRIVATE KEY-----) are fully supported, with or without passphrase.
+
+Other formats:
+
+DSA: obsolete, do not use.
+
+ECDSA: might work, but compatibility is less certain than RSA PEM.
